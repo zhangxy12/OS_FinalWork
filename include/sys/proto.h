@@ -96,6 +96,8 @@ PUBLIC int		do_stat();
 PUBLIC int		strip_path(char * filename, const char * pathname,
 				   struct inode** ppinode);
 PUBLIC int		search_file(char * path);
+PUBLIC int		do_open_dir();
+PUBLIC int		do_open_dir_l();
 
 /* fs/disklog.c */
 PUBLIC int		do_disklog();

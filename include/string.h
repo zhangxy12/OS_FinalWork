@@ -11,6 +11,8 @@ PUBLIC	int	strlen(const char* p_str);
 PUBLIC	int	memcmp(const void * s1, const void *s2, int n);
 PUBLIC	int	strcmp(const char * s1, const char *s2);
 PUBLIC	char*	strcat(char * s1, const char *s2);
+PUBLIC  int     strncmp( char *s1,  char *s2, int n);
+PUBLIC  char*   strstr( char *haystack,  char *needle);
 
 /**
  * `phys_copy' and `phys_set' are used only in the kernel, where segments

@@ -155,6 +155,8 @@
 #define MAG_CH_PANIC	'\002'
 #define MAG_CH_ASSERT	'\003'
 
+#define FILE_TYPE_DIR  4
+#define NULL 0
 /**
  * @enum msgtype
  * @brief MESSAGE types
@@ -167,10 +169,10 @@ enum msgtype {
 	HARD_INT = 1,
 
 	/* SYS task */
-	GET_TICKS, GET_PID, GET_RTC_TIME,
+	GET_TICKS, GET_PID, GET_RTC_TIME, GET_PROC_INFO, KILL_PROC,
 
 	/* FS */
-	OPEN, CLOSE, READ, WRITE, LSEEK, STAT, UNLINK,
+	OPEN, CLOSE, READ, WRITE, LSEEK, STAT, UNLINK, OPEN_DIR, OPEN_DIR_L,
 
 	/* FS & TTY */
 	SUSPEND_PROC, RESUME_PROC,

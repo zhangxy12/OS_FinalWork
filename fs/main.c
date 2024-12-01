@@ -77,6 +77,12 @@ PUBLIC void task_fs()
 		case STAT:
 			fs_msg.RETVAL = do_stat();
 			break;
+		case OPEN_DIR:
+			fs_msg.BUF = do_open_dir();
+			break;
+		case OPEN_DIR_L:
+			fs_msg.BUF = do_open_dir_l();
+			break;
 		default:
 			dump_msg("FS::unknown message:", &fs_msg);
 			assert(0);
@@ -94,6 +100,7 @@ PUBLIC void task_fs()
 		msg_name[FORK]   = "FORK";
 		msg_name[EXIT]   = "EXIT";
 		msg_name[STAT]   = "STAT";
+		//msg_name[OPEN_DIR]   = "OPRN_DIR";
 
 		switch (msgtype) {
 		case UNLINK:
@@ -108,6 +115,8 @@ PUBLIC void task_fs()
 		case EXIT:
 		case LSEEK:
 		case STAT:
+		case OPEN_DIR:
+		case OPEN_DIR_L:
 			break;
 		case RESUME_PROC:
 			break;

@@ -22,7 +22,7 @@ echo >> $syslog_file
 echo "time: "`cat $syslog_file | head -n 3 | tail -n 1`
 echo
 cat $syslog_file | sed '1,3d' > filedesc.dot
-cat filedesc.dot | scripts/splitgraphs
+cat filedesc.dot | ./splitgraphs
 gthumb . &
 echo
 

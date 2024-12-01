@@ -249,65 +249,101 @@ void untar(const char * filename)
  * 
  * @param tty_name  TTY file name.
  *****************************************************************************/
+
+#define MAX_SHELL_PROC 5 //最多指令条数 echo pwd ls cat cp touch rm    
+#define MAX_SHELL_PROC_STACK 128 //一次输入的最大长度
+
+char* multi_argv[MAX_SHELL_PROC][MAX_SHELL_PROC_STACK];  //multi_argv保存二维字符串数组   
+
 void shabby_shell(const char * tty_name)
 {
-	int fd_stdin  = open(tty_name, O_RDWR);
-	assert(fd_stdin  == 0);
-	int fd_stdout = open(tty_name, O_RDWR);
-	assert(fd_stdout == 1);
+    int fd_stdin  = open(tty_name, O_RDWR);
+    assert(fd_stdin  == 0);
+    int fd_stdout = open(tty_name, O_RDWR);
+    assert(fd_stdout == 1);
 
-	char rdbuf[128];
+    char rdbuf[128];
 
-	while (1) {
-		write(1, "$ ", 2);
-		int r = read(0, rdbuf, 70);
-		rdbuf[r] = 0;
+    while (1) {
+        write(1, "$ ", 2);
+        int r = read(0, rdbuf, 70);
+        rdbuf[r] = 0;
 
-		int argc = 0;
-		char * argv[PROC_ORIGIN_STACK];
-		char * p = rdbuf;
-		char * s;
-		int word = 0;
-		char ch;
-		do {
-			ch = *p;
-			if (*p != ' ' && *p != 0 && !word) {
-				s = p;
-				word = 1;
-			}
-			if ((*p == ' ' || *p == 0) && word) {
-				word = 0;
-				argv[argc++] = s;
-				*p = 0;
-			}
-			p++;
-		} while(ch);
-		argv[argc] = 0;
+        int argc = 0;
+        char * argv[PROC_ORIGIN_STACK];
+        char * p = rdbuf;
+        char * s;
+        int word = 0;
+        char ch;
+        do {
+            ch = *p;
+            if (*p != ' ' && *p != 0 && !word) {
+                s = p;
+                word = 1;
+            }
+            if ((*p == ' ' || *p == 0) && word) {
+                word = 0;
+                argv[argc++] = s;
+                *p = 0;
+            }
+            p++;
+        } while(ch);
+        argv[argc] = 0;
 
-		int fd = open(argv[0], O_RDWR);
-		if (fd == -1) {
-			if (rdbuf[0]) {
-				write(1, "{", 1);
-				write(1, rdbuf, r);
-				write(1, "}\n", 2);
-			}
-		}
-		else {
-			close(fd);
-			int pid = fork();
-			if (pid != 0) { /* parent */
-				int s;
-				wait(&s);
-			}
-			else {	/* child */
-				execv(argv[0], argv);
-			}
-		}
-	}
+        // 初始化变量
+        int num_proc = 1; // 表示有多少个命令  
+		int sec_count = 0; // 当前命令的参数计数 
+		int error = 0; // 标记命令是否出错 
 
-	close(1);
-	close(0);
+        // 将命令和参数分配到 multi_argv 中
+        for (int i = 0; i < argc; i++) {
+            if (strcmp(argv[i], "&") != 0) {
+                multi_argv[num_proc - 1][sec_count++] = argv[i];
+            } else {
+                multi_argv[num_proc - 1][sec_count] = 0; 	// 将“&”后的命令视为后台命令
+                num_proc++;
+                sec_count = 0;
+                if (num_proc > MAX_SHELL_PROC) {
+                    error = 1;
+                    printf("Too many commands!\n");
+                    break;
+                }
+            }
+        }
+
+        // 执行命令
+        if (!error)  
+		{  
+			for (int i = 0; i < num_proc; i++)  
+			{  
+				int fd = open(multi_argv[i][0], O_RDWR);  
+				if (fd == -1) {  
+					if (rdbuf[0]) {  
+						write(1, "{", 1);  
+						write(1, rdbuf, r);  
+						write(1, "}\n", 2);  
+					}  
+				}  
+				else {  
+					close(fd);  
+					int pid = fork();  
+					if (pid != 0) { /* parent */  
+						int s;  
+						wait(&s);  
+					}  
+					else {  /* child */  
+						execv(multi_argv[i][0], multi_argv[i]);  
+					}  
+				}  
+			}  
+		}  
+    }
+
+    close(1);
+    close(0);
 }
+
+
 
 /*****************************************************************************
  *                                Init

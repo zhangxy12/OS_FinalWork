@@ -339,7 +339,7 @@ PRIVATE int msg_receive(struct proc* current, int src, MESSAGE* m)
 	struct proc* p_from = 0; /* from which the message will be fetched */
 	struct proc* prev = 0;
 	int copyok = 0;
-
+	disable_int();
 	assert(proc2pid(p_who_wanna_recv) != src);
 
 	if ((p_who_wanna_recv->has_int_msg) &&
@@ -364,7 +364,8 @@ PRIVATE int msg_receive(struct proc* current, int src, MESSAGE* m)
 		assert(p_who_wanna_recv->p_msg == 0);
 		assert(p_who_wanna_recv->p_sendto == NO_TASK);
 		assert(p_who_wanna_recv->has_int_msg == 0);
-
+		
+		enable_int();
 		return 0;
 	}
 
@@ -478,6 +479,7 @@ PRIVATE int msg_receive(struct proc* current, int src, MESSAGE* m)
 		assert(p_who_wanna_recv->has_int_msg == 0);
 	}
 
+	enable_int();
 	return 0;
 }
 

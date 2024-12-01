@@ -22,6 +22,8 @@
 
 PRIVATE int read_register(char reg_addr);
 PRIVATE u32 get_rtc_time(struct time *t);
+PRIVATE struct proc* get_proc_by_name(char* name);  // 声明函数
+
 
 /*****************************************************************************
  *                                task_sys
@@ -57,6 +59,43 @@ PUBLIC void task_sys()
 				  sizeof(t));
 			send_recv(SEND, src, &msg);
 			break;
+		case GET_PROC_INFO:
+			msg.type = SYSCALL_RET;
+			phys_copy(va2la(src, msg.BUF),
+				  va2la(TASK_SYS, &proc_table[msg.PID]),
+				  sizeof(struct proc));
+			send_recv(SEND, src, &msg);
+            break;
+		case KILL_PROC:
+			{
+				// 分配一个固定内存来存储目标进程名称
+				msg.type = SYSCALL_RET;
+				char target_name[20];  // 假设最大进程名称长度为 MAX_PROC_NAME_LEN
+				phys_copy(va2la(TASK_SYS, target_name), va2la(src, msg.BUF), 20);
+
+				struct proc* target_proc = NULL;
+
+				// 遍历进程表，查找进程名字匹配的进程
+				for (int i = 0; i < NR_TASKS + NR_PROCS; i++) {
+					if (proc_table[i].p_flags != FREE_SLOT && strcmp(proc_table[i].name, target_name) == 0) {
+						target_proc = &proc_table[i];
+						break;
+					}
+				}
+
+				if (target_proc != NULL) {
+					// 找到进程后，标记为僵尸进程，清理资源
+					target_proc->p_flags = HANGING;  // 将进程状态改为 ZOMBIE
+					msg.RETVAL = 0;  // 成功
+				} else {
+					// 找不到进程
+					msg.RETVAL = -1;  // 失败，进程不存在
+				}
+				send_recv(SEND, src, &msg);
+			}
+			break;
+
+
 		default:
 			panic("unknown msg type");
 			break;
@@ -64,6 +103,20 @@ PUBLIC void task_sys()
 	}
 }
 
+/**
+ * @brief Get process by name from the process table.
+ * 
+ * @param name The name of the process to find.
+ * @return A pointer to the process structure, or NULL if not found.
+ */
+PRIVATE struct proc* get_proc_by_name(char* name) {
+    for (int i = 0; i < NR_TASKS + NR_PROCS; i++) {
+        if (strcmp(proc_table[i].name, name) == 0 && proc_table[i].p_flags != FREE_SLOT) {
+            return &proc_table[i];
+        }
+    }
+    return NULL;  // If not found, return NULL
+}
 
 /*****************************************************************************
  *                                get_rtc_time

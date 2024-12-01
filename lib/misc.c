@@ -191,3 +191,43 @@ PUBLIC void assertion_failure(char *exp, char *file, char *base_file, int line)
 	/* should never arrive here */
         __asm__ __volatile__("ud2");
 }
+PUBLIC int strncmp( char *s1,  char *s2, int n) {
+    int i;
+
+    // 比较两个字符串的前 n 个字符
+    for (i = 0; i < n; i++) {
+        // 如果s1或者s2的字符到达字符串结尾（即'\0'），返回比较结果
+        if (s1[i] != s2[i]) {
+            return (unsigned char)s1[i] - (unsigned char)s2[i];
+        }
+        if (s1[i] == '\0') {
+            return 0;  // 如果遇到 '\0'，说明两个字符串已经相等
+        }
+    }
+    return 0;  // 如果没有差异，返回 0
+}
+
+// 自定义 strstr 函数
+PUBLIC char * strstr( char *haystack,  char *needle) {
+    if (*needle == '\0') {
+        return (char *)haystack;  // 如果needle为空，返回haystack的指针
+    }
+
+    for ( char *h = haystack; *h != '\0'; h++) {
+        // 当剩余字符长度大于或等于needle的长度时，开始比对
+         char *h_pos = h;
+         char *n_pos = needle;
+        
+        while (*h_pos != '\0' && *n_pos != '\0' && *h_pos == *n_pos) {
+            h_pos++;
+            n_pos++;
+        }
+
+        if (*n_pos == '\0') {
+            return (char *)h;  // 找到匹配的子字符串，返回指针
+        }
+    }
+
+    return NULL;  // 未找到匹配的子字符串，返回NULL
+}
+

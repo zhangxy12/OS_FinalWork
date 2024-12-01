@@ -36,7 +36,8 @@ void assertion_failure(char *exp, char *file, char *base_file, int line);
 #define SEEK_CUR	2
 #define SEEK_END	3
 
-#define	MAX_PATH	128
+#define	MAX_PATH	256
+#define	MAX_PATH_L	4096
 
 /**
  * @struct stat
@@ -146,9 +147,12 @@ PUBLIC int	execv		(const char * path, char * argv[]);
 
 /* lib/stat.c */
 PUBLIC int	stat		(const char *path, struct stat *buf);
+PUBLIC char* open_dir	(char * path);
+PUBLIC char* open_dir_l	(char * path);
 
 /* lib/syslog.c */
 PUBLIC	int	syslog		(const char *fmt, ...);
+
 
 
 #endif /* _ORANGES_STDIO_H_ */
