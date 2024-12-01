@@ -83,6 +83,7 @@ PUBLIC struct super_block *	get_super_block(int dev);
 /* fs/open.c */
 PUBLIC int		do_open();
 PUBLIC int		do_close();
+PUBLIC int		do_lseek();
 
 /* fs/read_write.c */
 PUBLIC int		do_rdwt();
@@ -112,7 +113,7 @@ PUBLIC void		do_exit(int status);
 PUBLIC void		do_wait();
 
 /* mm/exec.c */
-/* PUBLIC int		do_exec(); */
+PUBLIC int		do_exec();
 
 /* console.c */
 PUBLIC void out_char(CONSOLE* p_con, char ch);

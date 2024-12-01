@@ -37,6 +37,7 @@ PUBLIC void get_boot_params(struct boot_params * pbp)
 {
 	/**
 	 * Boot params should have been saved at BOOT_PARAM_ADDR.
+	 * @see include/load.inc boot/loader.asm boot/hdloader.asm
 	 */
 	int * p = (int*)BOOT_PARAM_ADDR;
 	assert(p[BI_MAG] == BOOT_PARAM_MAGIC);
@@ -83,7 +84,6 @@ PUBLIC int get_kernel_map(unsigned int * b, unsigned int * l)
 			(Elf32_Shdr*)(bp.kernel_file +
 				      elf_header->e_shoff +
 				      i * elf_header->e_shentsize);
-
 		if (section_header->sh_flags & SHF_ALLOC) {
 			int bottom = section_header->sh_addr;
 			int top = section_header->sh_addr +

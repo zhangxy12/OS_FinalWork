@@ -102,8 +102,6 @@ PUBLIC void init_keyboard()
 /**
  * Yes, it is an ugly function.
  *
- * @todo Re-write this ugly function.
- * 
  * @param tty  Which TTY is reading the keyboard input.
  *****************************************************************************/
 PUBLIC void keyboard_read(TTY* tty)
