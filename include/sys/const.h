@@ -156,7 +156,7 @@
 #define MAG_CH_ASSERT	'\003'
 
 #define FILE_TYPE_DIR  4
-#define NULL 0
+#define NULL ((void *)0)
 /**
  * @enum msgtype
  * @brief MESSAGE types

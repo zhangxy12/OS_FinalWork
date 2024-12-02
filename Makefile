@@ -36,14 +36,14 @@ OBJS		= kernel/kernel.o kernel/start.o kernel/main.o\
 			mm/main.o mm/forkexit.o mm/exec.o\
 			fs/main.o fs/open.o fs/misc.o fs/read_write.o\
 			fs/link.o \
-			fs/disklog.o  
+			fs/disklog.o   
 LOBJS		=  lib/syscall.o\
 			lib/printf.o lib/vsprintf.o\
 			lib/string.o lib/misc.o\
 			lib/open.o lib/read.o lib/write.o lib/close.o lib/unlink.o\
 			lib/lseek.o\
 			lib/getpid.o lib/stat.o\
-			lib/fork.o lib/exit.o lib/wait.o lib/exec.o lib/open_dir.o  lib/open_dir_l.o
+			lib/fork.o lib/exit.o lib/wait.o lib/exec.o lib/open_dir.o  
 DASMOUTPUT	= kernel.bin.asm
 
 # All Phony Targets
@@ -197,9 +197,6 @@ lib/lseek.o: lib/lseek.c
 lib/open_dir.o: lib/open_dir.c
 	$(CC) $(CFLAGS) -o $@ $<
 
-lib/open_dir_l.o: lib/open_dir_l.c
-	$(CC) $(CFLAGS) -o $@ $<
-
 mm/main.o: mm/main.c
 	$(CC) $(CFLAGS) -o $@ $<
 
@@ -223,3 +220,4 @@ fs/link.o: fs/link.c
 
 fs/disklog.o: fs/disklog.c
 	$(CC) $(CFLAGS) -o $@ $<
+
