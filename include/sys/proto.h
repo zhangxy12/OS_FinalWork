@@ -104,6 +104,9 @@ PUBLIC int		do_disklog();
 PUBLIC int		disklog(char * logstr); /* for debug */
 PUBLIC void		dump_fd_graph(const char * fmt, ...);
 
+/* fs/filelog.c */
+PUBLIC int		filelog(char * logstr);
+
 /* mm/main.c */
 PUBLIC void		task_mm();
 PUBLIC int		alloc_mem(int pid, int memsize);

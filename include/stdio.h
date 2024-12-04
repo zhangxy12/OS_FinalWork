@@ -106,7 +106,8 @@ PUBLIC	int	sprintf(char *buf, const char *fmt, ...);
 /* 库函数 */
 /*--------*/
 
-#ifdef ENABLE_DISK_LOG
+#define ENABLE_FILE_LOG
+#ifdef ENABLE_FILE_LOG
 #define SYSLOG syslog
 #endif
 

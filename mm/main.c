@@ -43,6 +43,18 @@ PUBLIC void task_mm()
 
 		int msgtype = mm_msg.type;
 
+		if (log_fd!=-1) {
+			switch (msgtype) {
+			case FORK:
+				SYSLOG("{task_mm} type:FORK\n");
+				break;
+			case EXIT:
+				SYSLOG("{task_mm} type:EXIT pid:%d\n", mm_msg.PID);
+				break;
+			default:
+				break;
+			}
+		}
 		switch (msgtype) {
 		case FORK:
 			mm_msg.RETVAL = do_fork();
@@ -53,6 +65,9 @@ PUBLIC void task_mm()
 			break;
 		case EXEC:
 			mm_msg.RETVAL = do_exec();
+			break;
+		case LOG:
+			log_fd = 2;
 			break;
 		case WAIT:
 			do_wait();

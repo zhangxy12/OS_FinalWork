@@ -62,3 +62,7 @@ extern	char *			logbuf;
 extern	const int		LOGBUF_SIZE;
 extern	char *			logdiskbuf;
 extern	const int		LOGDISKBUF_SIZE;
+
+/* filelog */
+EXTERN	int log_fd;
+EXTERN	int first_log;

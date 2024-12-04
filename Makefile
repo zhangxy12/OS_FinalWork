@@ -36,14 +36,14 @@ OBJS		= kernel/kernel.o kernel/start.o kernel/main.o\
 			mm/main.o mm/forkexit.o mm/exec.o\
 			fs/main.o fs/open.o fs/misc.o fs/read_write.o\
 			fs/link.o \
-			fs/disklog.o  
+			fs/disklog.o fs/filelog.o
 LOBJS		=  lib/syscall.o\
 			lib/printf.o lib/vsprintf.o\
 			lib/string.o lib/misc.o\
 			lib/open.o lib/read.o lib/write.o lib/close.o lib/unlink.o\
 			lib/lseek.o\
 			lib/getpid.o lib/stat.o\
-			lib/fork.o lib/exit.o lib/wait.o lib/exec.o lib/open_dir.o  lib/open_dir_l.o
+			lib/fork.o lib/exit.o lib/wait.o lib/exec.o lib/open_dir.o lib/open_dir_l.o lib/syslog.o fs/filelog.o
 DASMOUTPUT	= kernel.bin.asm
 
 # All Phony Targets
@@ -70,8 +70,8 @@ disasm :
 
 buildimg :
 	dd if=boot/boot.bin of=$(FD) bs=512 count=1 conv=notrunc
-	dd if=boot/hdboot.bin of=$(HD) seek=`echo "obase=10;ibase=16;\`egrep -e '^ROOT_BASE' boot/include/load.inc | sed -e 's/.*0x//g'\`*200" | bc` bs=1 count=446 conv=notrunc
-	dd if=boot/hdboot.bin of=$(HD) seek=`echo "obase=10;ibase=16;\`egrep -e '^ROOT_BASE' boot/include/load.inc | sed -e 's/.*0x//g'\`*200+1FE" | bc` skip=510 bs=1 count=2 conv=notrunc
+	dd if=boot/hdboot.bin of=$(HD) seek=4044600 bs=1 count=446 conv=notrunc
+	dd if=boot/hdboot.bin of=$(HD) seek=4044600 skip=510 bs=1 count=2 conv=notrunc
 	sudo mount -o loop $(FD) /mnt/floppy/
 	sudo cp -fv boot/loader.bin /mnt/floppy/
 	sudo cp -fv kernel.bin /mnt/floppy
@@ -222,4 +222,7 @@ fs/link.o: fs/link.c
 	$(CC) $(CFLAGS) -o $@ $<
 
 fs/disklog.o: fs/disklog.c
+	$(CC) $(CFLAGS) -o $@ $<
+
+fs/filelog.o: fs/filelog.c
 	$(CC) $(CFLAGS) -o $@ $<

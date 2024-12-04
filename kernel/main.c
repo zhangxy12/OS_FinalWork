@@ -120,6 +120,8 @@ PUBLIC int kernel_main()
 
 	k_reenter = 0;
 	ticks = 0;
+	first_log = 0;
+	log_fd = -1;
 
 	p_proc_ready	= proc_table;
 
@@ -191,12 +193,13 @@ void untar(const char * filename)
 
 	while (1) {
 		bytes = read(fd, buf, SECTOR_SIZE);
+		printf("size of Tar: %d bytes\n", bytes);
 		assert(bytes == SECTOR_SIZE); /* size of a TAR file
 					       * must be multiple of 512
 					       */
 		if (buf[0] == 0) {
 			if (i == 0)
-				printf("    need not unpack the file.\n");
+			 	printf("    need not unpack the file.\n");
 			break;
 		}
 		i++;
@@ -229,12 +232,12 @@ void untar(const char * filename)
 		close(fdout);
 	}
 
-	if (i) {
-		lseek(fd, 0, SEEK_SET);
-		buf[0] = 0;
-		bytes = write(fd, buf, 1);
-		assert(bytes == 1);
-	}
+	// if (i) {
+	// 	lseek(fd, 0, SEEK_SET);
+	// 	buf[0] = 0;
+	// 	bytes = write(fd, buf, 1);
+	// 	assert(bytes == 1);
+	// }
 
 	close(fd);
 
@@ -268,6 +271,8 @@ void shabby_shell(const char * tty_name)
         write(1, "$ ", 2);
         int r = read(0, rdbuf, 70);
         rdbuf[r] = 0;
+		// printf("shell:log_fd:%d\n", log_fd);
+		SYSLOG("{tasktty} command:%s\n", rdbuf);
 
         int argc = 0;
         char * argv[PROC_ORIGIN_STACK];
@@ -325,15 +330,24 @@ void shabby_shell(const char * tty_name)
 					}  
 				}  
 				else {  
+					
+					int tmp_fd = fd;
 					close(fd);  
-					int pid = fork();  
+					int pid = fork();
+					  
 					if (pid != 0) { /* parent */  
 						int s;  
 						wait(&s);  
 					}  
-					else {  /* child */  
+					else {  /* child */ 
+						// SYSLOG("{task_fs} type:OPEN\n");
+						SYSLOG("{task_fs} type:OPEN filename:%s\n", multi_argv[i][0]);
+						SYSLOG("{task_mm} type:FORK\n");
 						execv(multi_argv[i][0], multi_argv[i]);  
 					}  
+					
+					SYSLOG("{task_mm} type:EXIT pid:%d\n", pid);
+					SYSLOG("{task_fs} type:CLOSE fd:%d\n", tmp_fd);
 				}  
 			}  
 		}  
