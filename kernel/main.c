@@ -17,6 +17,12 @@
 #include "global.h"
 #include "proto.h"
 
+/*use chceck*/
+#define STATIC_CHECK  1
+typedef struct {
+    char name[128];           // 文件名
+    int check_value;   // 偶校验
+} Check;
 
 /*****************************************************************************
  *                               kernel_main
@@ -170,6 +176,18 @@ struct posix_tar_header
 	/* 500 */
 };
 
+// 计算偶校验，通过异或计算校验位
+int calculate_even_parity(unsigned char byte) {
+    int parity = 0;
+    
+    // 对每个字节进行按位异或计算所有位的校验
+    for (int i = 0; i < 8; i++) {
+        parity ^= (byte >> i) & 1; // 对每一位进行异或操作
+    }
+
+    // 返回异或的结果
+    return parity;
+}
 /*****************************************************************************
  *                                untar
  *****************************************************************************/
@@ -182,8 +200,18 @@ void untar(const char * filename)
 {
 	printf("[extract `%s'\n", filename);
 	int fd = open(filename, O_RDWR);
-	assert(fd != -1);
+	
+	int check_file_fd;
+    if (STATIC_CHECK) {
+        check_file_fd = open("check", O_RDWR);  //  check存储每个可执行文件的校验值
+        if (check_file_fd == -1) {
+            printf("creating check file\n");
+            check_file_fd = open("check", O_CREAT | O_RDWR);
+        }
+    }
 
+	char temp_filename[32] = {0};
+	assert(fd != -1);
 	char buf[SECTOR_SIZE * 16];
 	int chunk = sizeof(buf);
 	int i = 0;
@@ -218,6 +246,8 @@ void untar(const char * filename)
 			return;
 		}
 		printf("    %s\n", phdr->name);
+		strcpy(temp_filename, phdr->name);
+
 		while (bytes_left) {
 			int iobytes = min(chunk, bytes_left);
 			read(fd, buf,
@@ -227,19 +257,103 @@ void untar(const char * filename)
 			bytes_left -= iobytes;
 		}
 		close(fdout);
-	}
 
+		if (STATIC_CHECK) {//计算每一个文件的原始偶校验值
+            int fd_check = open(temp_filename, O_RDWR);
+            if (fd_check == -1) {
+                printf("open check file failed\n");
+            }
+            Check check;
+			check.check_value = 0;  // 初始化校验和为0，开始计算校验和
+			int bytes_get = 1;
+			char byte128[128];  // 定义一个128字节的缓冲区
+			strcpy(check.name, temp_filename);  
+
+			while (bytes_get) {  // 循环读取文件直到读取完
+				bytes_get = read(fd_check, &byte128, sizeof(byte128));  // 每次读取128字节
+				for (int i = 0; i < bytes_get; i++) {
+					check.check_value ^= calculate_even_parity(byte128[i]);  // 对每个字节进行偶校验的异或操作
+				}
+			}
+			write(check_file_fd, &check, sizeof(check));  // 写入最终的校验结果
+			close(fd_check);
+		}
+	}
+	
 	if (i) {
 		lseek(fd, 0, SEEK_SET);
 		buf[0] = 0;
 		bytes = write(fd, buf, 1);
 		assert(bytes == 1);
 	}
+	
+	if (STATIC_CHECK) {
+        close(check_file_fd);
+    }
 
 	close(fd);
 
 	printf(" done, %d files extracted]\n", i);
 }
+
+int check_valid(char *filename) 
+{
+    int check_fd = open("check", O_RDWR);
+    if (check_fd == -1) {
+        printf("Error: Unable to open check file\n");
+        return 0;
+    }
+
+    Check check;
+	int origin_value ;
+    int flag = 0;
+    // 在 check 中查找该文件的校验值
+    while (read(check_fd, &check, sizeof(check)) > 0) {
+        if (strcmp(check.name, filename) == 0) {
+			origin_value = check.check_value;
+            flag = 1;
+            break;  // 找到匹配的文件
+        }
+    }
+    close(check_fd);
+
+    if (flag == 0) {
+        printf("Sorry, %s not exist in the system\n", filename);
+        return 0;
+    } else {
+        // 校验当前文件的校验值
+        int crt_file_fd = open(filename, O_RDWR);
+        if (crt_file_fd == -1) {
+            printf("Error: Unable to open file %s\n", filename);
+            return 0;
+        }
+
+        int calculated_checkvalue = 0;  // 初始化计算的校验和为 0
+        char temp_byte[128];          // 存放读取的文件内容
+        int bytes_get = 1;
+        
+        // 读取文件并计算校验值
+        while (bytes_get) {
+            bytes_get = read(crt_file_fd, &temp_byte, sizeof(temp_byte)); // 读取文件
+            for (int i = 0; i < bytes_get; i++) {
+                calculated_checkvalue ^= calculate_even_parity(temp_byte[i]);  // 计算偶校验
+            }
+        }
+
+        close(crt_file_fd);
+
+        // 比较计算出的校验值和存储的原始校验值
+		printf("current_checkvalue = %d\norigin_value = %d\n",calculated_checkvalue, origin_value);
+        if (calculated_checkvalue == origin_value) {
+            printf("File is valid! Check_value right.\n");
+            return 1;
+        } else {
+            printf("Sorry, %s has been modified, can not execv.\n", filename);
+            return 0;
+        }
+    }
+}
+
 
 /*****************************************************************************
  *                                shabby_shell
@@ -250,13 +364,13 @@ void untar(const char * filename)
  * @param tty_name  TTY file name.
  *****************************************************************************/
 
-#define MAX_SHELL_PROC 5 //最多指令条数 echo pwd ls cat cp touch rm    
+#define MAX_SHELL_PROC 5 //最多指令条数    
 #define MAX_SHELL_PROC_STACK 128 //一次输入的最大长度
-
-char* multi_argv[MAX_SHELL_PROC][MAX_SHELL_PROC_STACK];  //multi_argv保存二维字符串数组   
+   
 
 void shabby_shell(const char * tty_name)
 {
+	char* multi_argv[MAX_SHELL_PROC][MAX_SHELL_PROC_STACK];  //multi_argv保存二维字符串数组
     int fd_stdin  = open(tty_name, O_RDWR);
     assert(fd_stdin  == 0);
     int fd_stdout = open(tty_name, O_RDWR);
@@ -300,7 +414,7 @@ void shabby_shell(const char * tty_name)
             if (strcmp(argv[i], "&") != 0) {
                 multi_argv[num_proc - 1][sec_count++] = argv[i];
             } else {
-                multi_argv[num_proc - 1][sec_count] = 0; 	// 将“&”后的命令视为后台命令
+                multi_argv[num_proc - 1][sec_count] = 0; 	
                 num_proc++;
                 sec_count = 0;
                 if (num_proc > MAX_SHELL_PROC) {
@@ -331,7 +445,8 @@ void shabby_shell(const char * tty_name)
 						int s;  
 						wait(&s);  
 					}  
-					else {  /* child */  
+					else {   // 检查文件是否被修改
+						if ((!STATIC_CHECK) || check_valid(multi_argv[i][0]) == 1) 
 						execv(multi_argv[i][0], multi_argv[i]);  
 					}  
 				}  

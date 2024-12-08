@@ -51,7 +51,7 @@ struct stat {
 	int st_size;		/* file size */
 	int st_st_sect;
     int st_nr_sects;
-    int st_cnt;
+    int st_ctime;
 };
 
 /**

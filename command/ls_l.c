@@ -36,6 +36,7 @@ int main(int args, char* argv[])
             struct stat file_stat;
             if (strlen(file_name) > 0 &&strcmp(file_name, " ") != 0 && (stat(file_name, &file_stat) == 0)) {
                 // 判断文件类型，并打印相应信息
+
                 char file_type[20];
                 if (file_stat.st_mode == 16384) {  // 0x4000 - Directory
                     strcpy(file_type, "I_DIRECTORY");
@@ -43,6 +44,12 @@ int main(int args, char* argv[])
                     strcpy(file_type, "I_REGULAR");
                 } else if (file_stat.st_mode == 8192) {  //  0x2000- Character device
                     strcpy(file_type, "I_CHAR_SPECIAL");
+                }else if (file_stat.st_mode == 61440) {  //  I_TYPE_MASK     0170000
+                    strcpy(file_type, "I_TYPE_MASK");
+                }else if (file_stat.st_mode == 24576) {  //  I_BLOCK_SPECIAL 0060000
+                    strcpy(file_type, "I_BLOCK_SPECIAL");
+                }else if (file_stat.st_mode == 4096) {  //  I_NAMED_PIPE	0010000
+                    strcpy(file_type, "I_NAMED_PIPE");
                 } else {
                     strcpy(file_type, "UNKNOWN");  // 如果是其他类型的文件
                 }

@@ -22,7 +22,7 @@
 
 PRIVATE int read_register(char reg_addr);
 PRIVATE u32 get_rtc_time(struct time *t);
-PRIVATE struct proc* get_proc_by_name(char* name);  // 声明函数
+
 
 
 /*****************************************************************************
@@ -70,7 +70,7 @@ PUBLIC void task_sys()
 			{
 				// 分配一个固定内存来存储目标进程名称
 				msg.type = SYSCALL_RET;
-				char target_name[20];  // 假设最大进程名称长度为 MAX_PROC_NAME_LEN
+				char target_name[20];  // 假设最大进程名称长度为20
 				phys_copy(va2la(TASK_SYS, target_name), va2la(src, msg.BUF), 20);
 
 				struct proc* target_proc = NULL;
@@ -84,38 +84,36 @@ PUBLIC void task_sys()
 				}
 
 				if (target_proc != NULL) {
-					// 找到进程后，标记为僵尸进程，清理资源
-					target_proc->p_flags = HANGING;  // 将进程状态改为 ZOMBIE
-					msg.RETVAL = 0;  // 成功
-				} else {
-					// 找不到进程
-					msg.RETVAL = -1;  // 失败，进程不存在
+				// 清理目标进程占用的文件描述符
+				for (int i = 0; i < NR_FILES; i++) {
+					if (target_proc->filp[i] != NULL) {
+						close(i);  // 关闭文件描述符
+						target_proc->filp[i] = NULL;  // 清空文件描述符指针
+					}
 				}
+
+				// 释放目标进程占用的内存
+				int target_pid = target_proc - proc_table;  // 获取目标进程的 PID
+				if (target_pid >= NR_TASKS + NR_NATIVE_PROCS) {  // 判断是否是用户进程
+					free_mem(target_pid);  // 释放目标进程的内存
+				}
+
+				target_proc->p_flags = HANGING;  // 将进程状态改为 HANGING
+
+				// 返回成功
+				msg.RETVAL = 0;  // 成功
+			} else {
+				// 找不到进程
+				msg.RETVAL = -1;  // 失败，进程不存在
+			}
 				send_recv(SEND, src, &msg);
 			}
 			break;
-
-
 		default:
 			panic("unknown msg type");
 			break;
 		}
 	}
-}
-
-/**
- * @brief Get process by name from the process table.
- * 
- * @param name The name of the process to find.
- * @return A pointer to the process structure, or NULL if not found.
- */
-PRIVATE struct proc* get_proc_by_name(char* name) {
-    for (int i = 0; i < NR_TASKS + NR_PROCS; i++) {
-        if (strcmp(proc_table[i].name, name) == 0 && proc_table[i].p_flags != FREE_SLOT) {
-            return &proc_table[i];
-        }
-    }
-    return NULL;  // If not found, return NULL
 }
 
 /*****************************************************************************

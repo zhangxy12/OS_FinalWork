@@ -83,6 +83,7 @@ struct inode {
 	int	i_dev;
 	int	i_cnt;		/**< How many procs share this inode  */
 	int	i_num;		/**< inode nr.  */
+	int i_ctime;    // time
 };
 
 /**

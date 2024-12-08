@@ -5,20 +5,42 @@
 
 #define BUFFER_SIZE 256  
 
-// 判断文件是否为可执行文件（没有后缀）
-int is_executable(const  char *filename) {
-    // 从字符串末尾开始遍历
-    int len = strlen(filename);
-    int i;
-    
-    // 遍历字符串，寻找最后一个点
-    for (i = len - 1; i >= 0; i--) {
-        if (filename[i] == '.') {
-            return 0;  // 找到点，认为是有扩展名的文件
-        }
+// 判断是否为 ELF 文件
+int is_elf(char elf_head[16]) {
+    if (strncmp((char*)elf_head, "\177ELF", 4) == 0) {
+        return 1;  // 是 ELF 文件
+    }
+    return 0;  // 不是 ELF 文件
+}
+
+// 判断文件是否为可执行文件（根据 ELF 文件头）
+int is_executable(const char *filename) {
+    int fd = open(filename, O_RDWR);  // 打开文件，读写模式
+    if (fd < 0) {
+        printf("Failed to open file: %s\n", filename);
+        return 0;
+    }
+   
+    lseek(fd, 0, SEEK_SET);  
+
+    char elf_head [16];
+    int n = read(fd, elf_head, 16);  // 读取 ELF 文件头
+    close(fd);
+
+    if (n < 16) {
+        
+        return 0;  // 读取文件头失败
     }
 
-    return 1;  // 没有点，认为是可执行文件
+    // 检查是否为 ELF 文件
+    if (is_elf(elf_head) == 1) {
+        
+        return 1;  // 是 ELF 文件
+    }else{
+       
+        return 0;
+    }
+
 }
 
 // 打开文件并读取到内存
@@ -120,6 +142,12 @@ int main(int argc, char *argv[]) {
 
     const char *filename = argv[1];
     int fd;
+
+    // 判断文件是否是"check"
+    if (strcmp(filename, "check") == 0) {
+        printf("Cannot be opened. You do not have permission.\n");
+        return 0;
+    }
 
     // 判断文件类型
     if (is_executable(filename)) {
