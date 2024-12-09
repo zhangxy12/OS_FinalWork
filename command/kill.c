@@ -17,10 +17,10 @@
  * @return 0 on success, -1 on failure.
  */
 int main(int argc, char* argv[]) {
-    if (argc != 2) {
-        printf("Usage: kill <process_name>\n");
-        return -1;  
-    }
+    // if (argc != 2) {
+    //     printf("Usage: kill <process_name>\n");
+    //     return -1;  
+    // }
 
     char* target_name = argv[1];  // 获取目标进程名
     MESSAGE msg;

@@ -42,6 +42,34 @@ PUBLIC int syslog(const char *fmt, ...)
 	len_buf = vsprintf(buf, fmt, arg);
 	assert(strlen(buf) == len_buf);
 
+	char log_type[10];
+	for(int gg=0; gg<9; ++gg) {
+		log_type[gg] = buf[gg];
+	}
+	log_type[9] = 0;
+	printl("LOG_FLAGS: ");
+	for(int gg=0; gg<4; ++gg) {
+		printl("%d", LOG_FLAGS[gg]);
+	}
+	printl("\n");
+	if(strcmp(log_type, "{tasktty}")==0) {
+		if(!LOG_FLAGS[0]) {
+			return -1;
+		}
+	} else if (strcmp(log_type, "{task_fs}")==0) {
+		if(!LOG_FLAGS[1]) {
+			return -1;
+		}
+	} else if (strcmp(log_type, "{task_mm}")==0) {
+		if(!LOG_FLAGS[2]) {
+			return -1;
+		}
+	} else if (strcmp(log_type, "{tasklog}")==0) {
+		if(!LOG_FLAGS[3]) {
+			return -1;
+		}
+	}
+
 	struct time t;
 	MESSAGE msg;
 	msg.type = GET_RTC_TIME;

@@ -36,6 +36,13 @@
 
    指令 & 指令 & 。（最多支持5个同时）
 
+4. 支持日志管理
+    - 在第一条shell指令输入后日志启动，可用下面的命令查看内容
+      指令：open_f logs.txt
+    - 开关日志命令，一共有"tty"、"fs"、"mm"、"device"四种 log_type
+      指令：set open <log_type> 开启对应日志（默认全部开启）
+      指令：set close <log_type> 关闭对应日志
+
 
 
 可信防护，静态度量：

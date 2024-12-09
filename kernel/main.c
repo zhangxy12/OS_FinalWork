@@ -491,13 +491,21 @@ void shabby_shell(const char * tty_name)
 					if (pid != 0) { /* parent */  
 						int s;  
 						wait(&s); 
+						if(strcmp(multi_argv[i][0], "open_f") == 0) {
+							SYSLOG("{task_fs} type:WRITE filename:%s\n", multi_argv[i][1]);
+						}
+						if(strcmp(multi_argv[i][0], "echo") == 0) {
+							SYSLOG("{task_fs} type:WRITE filename:%s\n", multi_argv[i][2]);
+						}
 						SYSLOG("{task_mm} type:EXIT pid:%d\n", pid);
 						SYSLOG("{task_fs} type:CLOSE fd:%d\n", tmp_fd);
 					}  
 					else {  /* child */ 
-						// SYSLOG("{task_fs} type:OPEN\n");
 						SYSLOG("{task_fs} type:OPEN filename:%s\n", multi_argv[i][0]); 
 						SYSLOG("{task_mm} type:FORK\n");
+						if(strcmp(multi_argv[i][0], "open_f") == 0) {
+							SYSLOG("{task_fs} type:READ filename_read:%s\n", multi_argv[i][1]);
+						}
 						// 检查文件是否被修改
 						if ((!STATIC_CHECK) || check_valid(multi_argv[i][0]) == 1) 
 						execv(multi_argv[i][0], multi_argv[i]);  

@@ -57,10 +57,10 @@ PUBLIC void task_fs()
 					SYSLOG("{task_fs} type:CLOSE fd:%d\n", fs_msg.FD);
 					break;
 				case READ:
-					SYSLOG("{task_fs} type:READ fd:%d\n", fs_msg.FD);
+					SYSLOG("{task_fs} type:READ filename_read:%s\n", fs_msg.PATHNAME);
 					break;
 				case WRITE:
-					SYSLOG("{task_fs} type:WRITE fd:%d\n", fs_msg.FD);
+					SYSLOG("{task_fs} type:WRITE filename_write:%s\n", fs_msg.PATHNAME);
 					break;
 				default:
 					break;

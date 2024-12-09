@@ -9,10 +9,10 @@
  */
 int main(int argc, char *argv[])
 {
-    if (argc != 2) {
-        printf("Usage: rm <filename>\n");
-        return -1;  
-    }
+    // if (argc != 2) {
+    //     printf("Usage: rm <filename>\n");
+    //     return -1;  
+    // }
 
     // Attempt to delete the specified file.
     if (unlink(argv[1]) == -1) {
