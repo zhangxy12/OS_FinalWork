@@ -47,7 +47,26 @@ PUBLIC void task_fs()
 		int msgtype = fs_msg.type;
 		int src = fs_msg.source;
 		pcaller = &proc_table[src];
-
+		//printl("taskfs:%d",log_fd);
+		if (log_fd!=-1 && fs_msg.FD!=log_fd) {
+			if(msgtype == OPEN) {
+				SYSLOG("{task_fs} type:OPEN filename:%s\n", fs_msg.PATHNAME);
+			} else {
+				switch (msgtype) {
+				case CLOSE:
+					SYSLOG("{task_fs} type:CLOSE fd:%d\n", fs_msg.FD);
+					break;
+				case READ:
+					SYSLOG("{task_fs} type:READ fd:%d\n", fs_msg.FD);
+					break;
+				case WRITE:
+					SYSLOG("{task_fs} type:WRITE fd:%d\n", fs_msg.FD);
+					break;
+				default:
+					break;
+				}
+			}
+		}
 		switch (msgtype) {
 		case OPEN:
 			fs_msg.FD = do_open();
@@ -172,6 +191,9 @@ PRIVATE void init_fs()
 	if (sb->magic != MAGIC_V1) {
 		printl("{FS} mkfs\n");
 		mkfs(); /* make FS */
+	} else {
+		printl("{FS} again mkfs\n");
+		mkfs();
 	}
 
 	/* load super block of ROOT */

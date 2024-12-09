@@ -178,13 +178,15 @@ enum msgtype {
 	SUSPEND_PROC, RESUME_PROC,
 
 	/* MM */
-	EXEC, WAIT,
+	EXEC, WAIT, 
 
 	/* FS & MM */
 	FORK, EXIT,
 
 	/* TTY, SYS, FS, MM, etc */
 	SYSCALL_RET,
+	
+	LOG,
 
 	/* message type for drivers */
 	DEV_OPEN = 1001,

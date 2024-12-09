@@ -126,6 +126,9 @@ PUBLIC int kernel_main()
 
 	k_reenter = 0;
 	ticks = 0;
+	first_log = 0;
+	log_fd = -1;
+	LOG_FLAGS[0] = LOG_FLAGS[1] = LOG_FLAGS[2] = LOG_FLAGS[3] = 1;
 
 	p_proc_ready	= proc_table;
 
@@ -219,12 +222,13 @@ void untar(const char * filename)
 
 	while (1) {
 		bytes = read(fd, buf, SECTOR_SIZE);
+		printf("size of Tar: %d bytes\n", bytes);
 		assert(bytes == SECTOR_SIZE); /* size of a TAR file
 					       * must be multiple of 512
 					       */
 		if (buf[0] == 0) {
 			if (i == 0)
-				printf("    need not unpack the file.\n");
+			 	printf("    need not unpack the file.\n");
 			break;
 		}
 		i++;
@@ -258,6 +262,12 @@ void untar(const char * filename)
 		}
 		close(fdout);
 
+	// if (i) {
+	// 	lseek(fd, 0, SEEK_SET);
+	// 	buf[0] = 0;
+	// 	bytes = write(fd, buf, 1);
+	// 	assert(bytes == 1);
+	// }
 		if (STATIC_CHECK) {//计算每一个文件的原始偶校验值
             int fd_check = open(temp_filename, O_RDWR);
             if (fd_check == -1) {
@@ -382,6 +392,8 @@ void shabby_shell(const char * tty_name)
         write(1, "$ ", 2);
         int r = read(0, rdbuf, 70);
         rdbuf[r] = 0;
+		// printf("shell:log_fd:%d\n", log_fd);
+		SYSLOG("{tasktty} command:%s\n", rdbuf);
 
         int argc = 0;
         char * argv[PROC_ORIGIN_STACK];
@@ -403,6 +415,12 @@ void shabby_shell(const char * tty_name)
             p++;
         } while(ch);
         argv[argc] = 0;
+
+		// for(int gg=0; gg<3; ++gg) {
+		// 	printl("%s ", argv[gg]);
+		// }
+		// printl("\n");
+		// printl("argc:%d\n", argc);
 
         // 初始化变量
         int num_proc = 1; // 表示有多少个命令  
@@ -428,9 +446,35 @@ void shabby_shell(const char * tty_name)
         // 执行命令
         if (!error)  
 		{  
+			int fd = 0;
 			for (int i = 0; i < num_proc; i++)  
 			{  
-				int fd = open(multi_argv[i][0], O_RDWR);  
+				if(strcmp(multi_argv[i][0], "set") != 0) {
+					fd = open(multi_argv[i][0], O_RDWR);  
+				}
+				else {
+					int set_flag = 0;
+					if(strcmp(multi_argv[i][1], "open") == 0) {
+						set_flag = 1;
+					}
+					if(strcmp(multi_argv[i][2], "tty") == 0) {
+						LOG_FLAGS[0] = set_flag;
+					} else if (strcmp(multi_argv[i][2], "fs") == 0) {
+						LOG_FLAGS[1] = set_flag; 
+					} else if (strcmp(multi_argv[i][2], "mm") == 0) {
+						LOG_FLAGS[2] = set_flag;
+					} else if (strcmp(multi_argv[i][2], "device") == 0) {
+						LOG_FLAGS[3] = set_flag;
+					} else {
+						set_flag = -1;
+					}
+					if(set_flag == -1){
+						SYSLOG("{tasklog} Fail to Changed Log Parameter\n");
+					} else {
+						SYSLOG("{tasklog} Log Parameter Changed\n");
+					}
+					continue;
+				}
 				if (fd == -1) {  
 					if (rdbuf[0]) {  
 						write(1, "{", 1);  
@@ -439,16 +483,26 @@ void shabby_shell(const char * tty_name)
 					}  
 				}  
 				else {  
+					//printl("shell_fd:%d\n", log_fd);
+					int tmp_fd = fd;
 					close(fd);  
-					int pid = fork();  
+					int pid = fork();
+					
 					if (pid != 0) { /* parent */  
 						int s;  
-						wait(&s);  
+						wait(&s); 
+						SYSLOG("{task_mm} type:EXIT pid:%d\n", pid);
+						SYSLOG("{task_fs} type:CLOSE fd:%d\n", tmp_fd);
 					}  
-					else {   // 检查文件是否被修改
+					else {  /* child */ 
+						// SYSLOG("{task_fs} type:OPEN\n");
+						SYSLOG("{task_fs} type:OPEN filename:%s\n", multi_argv[i][0]); 
+						SYSLOG("{task_mm} type:FORK\n");
+						// 检查文件是否被修改
 						if ((!STATIC_CHECK) || check_valid(multi_argv[i][0]) == 1) 
 						execv(multi_argv[i][0], multi_argv[i]);  
-					}  
+					}
+					
 				}  
 			}  
 		}  
