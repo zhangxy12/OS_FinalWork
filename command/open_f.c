@@ -135,10 +135,10 @@ void edit_file(int fd, char *filename) {
 
 
 int main(int argc, char *argv[]) {
-    if (argc != 2) {
-        printf("Usage: open_f <filename>\n");
-        return 1;
-    }
+    // if (argc != 2) {
+    //     printf("Usage: open_f <filename>\n");
+    //     return 1;
+    // }
 
     const char *filename = argv[1];
     int fd;

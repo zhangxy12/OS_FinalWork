@@ -43,7 +43,7 @@ LOBJS		=  lib/syscall.o\
 			lib/open.o lib/read.o lib/write.o lib/close.o lib/unlink.o\
 			lib/lseek.o\
 			lib/getpid.o lib/stat.o\
-			lib/fork.o lib/exit.o lib/wait.o lib/exec.o lib/open_dir.o lib/open_dir_l.o lib/syslog.o fs/filelog.o
+			lib/fork.o lib/exit.o lib/wait.o lib/exec.o lib/open_dir.o lib/syslog.o fs/filelog.o
 DASMOUTPUT	= kernel.bin.asm
 
 # All Phony Targets
