@@ -66,3 +66,4 @@ extern	const int		LOGDISKBUF_SIZE;
 /* filelog */
 EXTERN	int log_fd;
 EXTERN	int first_log;
+EXTERN  int LOG_FLAGS[4]; // tty_log = 0, fs_log = 1, mm_log = 2, device_log = 3

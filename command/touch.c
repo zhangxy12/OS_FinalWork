@@ -1,14 +1,5 @@
 #include "type.h"
 #include "stdio.h"
-#include "const.h"
-#include "protect.h"
-#include "string.h"
-#include "fs.h"
-#include "proc.h"
-#include "tty.h"
-#include "console.h"
-#include "global.h"
-#include "proto.h"
 
 // @brief touch - Create a file .
 int main(int argc, char *argv[])  
@@ -18,8 +9,6 @@ int main(int argc, char *argv[])
         printf("Usage: %s <filename>\n", argv[0]);
         return -1;
     }
-    SYSLOG("{task_fs} OPEN file:%s", argv[1]);
-    // 传递进程内信息
 
     // 调用 open 函数来创建文件
     int fd = open(argv[1], O_CREAT | O_RDWR);  // 使用 O_CREAT 来创建文件，O_RDWR 表示读写模式

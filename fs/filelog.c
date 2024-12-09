@@ -23,7 +23,7 @@ PUBLIC int filelog(char * logstr)
         return -1;
     }
 
-    
+    //printl("filelog:%d",log_fd);
     int n = write(log_fd, logstr, strlen(logstr));
     // printf("write in fd:%d with %s", fd, logstr);
     assert(n == strlen(logstr));

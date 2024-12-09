@@ -122,6 +122,7 @@ PUBLIC int kernel_main()
 	ticks = 0;
 	first_log = 0;
 	log_fd = -1;
+	LOG_FLAGS[0] = LOG_FLAGS[1] = LOG_FLAGS[2] = LOG_FLAGS[3] = 1;
 
 	p_proc_ready	= proc_table;
 
@@ -295,6 +296,12 @@ void shabby_shell(const char * tty_name)
         } while(ch);
         argv[argc] = 0;
 
+		// for(int gg=0; gg<3; ++gg) {
+		// 	printl("%s ", argv[gg]);
+		// }
+		// printl("\n");
+		// printl("argc:%d\n", argc);
+
         // 初始化变量
         int num_proc = 1; // 表示有多少个命令  
 		int sec_count = 0; // 当前命令的参数计数 
@@ -319,9 +326,35 @@ void shabby_shell(const char * tty_name)
         // 执行命令
         if (!error)  
 		{  
+			int fd = 0;
 			for (int i = 0; i < num_proc; i++)  
 			{  
-				int fd = open(multi_argv[i][0], O_RDWR);  
+				if(strcmp(multi_argv[i][0], "set") != 0) {
+					fd = open(multi_argv[i][0], O_RDWR);  
+				}
+				else {
+					int set_flag = 0;
+					if(strcmp(multi_argv[i][1], "open") == 0) {
+						set_flag = 1;
+					}
+					if(strcmp(multi_argv[i][2], "tty") == 0) {
+						LOG_FLAGS[0] = set_flag;
+					} else if (strcmp(multi_argv[i][2], "fs") == 0) {
+						LOG_FLAGS[1] = set_flag; 
+					} else if (strcmp(multi_argv[i][2], "mm") == 0) {
+						LOG_FLAGS[2] = set_flag;
+					} else if (strcmp(multi_argv[i][2], "device") == 0) {
+						LOG_FLAGS[3] = set_flag;
+					} else {
+						set_flag = -1;
+					}
+					if(set_flag == -1){
+						SYSLOG("{tasklog} Fail to Changed Log Parameter\n");
+					} else {
+						SYSLOG("{tasklog} Log Parameter Changed\n");
+					}
+					continue;
+				}
 				if (fd == -1) {  
 					if (rdbuf[0]) {  
 						write(1, "{", 1);  
@@ -330,24 +363,24 @@ void shabby_shell(const char * tty_name)
 					}  
 				}  
 				else {  
-					
+					//printl("shell_fd:%d\n", log_fd);
 					int tmp_fd = fd;
 					close(fd);  
 					int pid = fork();
-					  
+					
 					if (pid != 0) { /* parent */  
 						int s;  
-						wait(&s);  
+						wait(&s); 
+						SYSLOG("{task_mm} type:EXIT pid:%d\n", pid);
+						SYSLOG("{task_fs} type:CLOSE fd:%d\n", tmp_fd);
 					}  
 					else {  /* child */ 
 						// SYSLOG("{task_fs} type:OPEN\n");
-						SYSLOG("{task_fs} type:OPEN filename:%s\n", multi_argv[i][0]);
+						SYSLOG("{task_fs} type:OPEN filename:%s\n", multi_argv[i][0]); 
 						SYSLOG("{task_mm} type:FORK\n");
 						execv(multi_argv[i][0], multi_argv[i]);  
-					}  
+					}
 					
-					SYSLOG("{task_mm} type:EXIT pid:%d\n", pid);
-					SYSLOG("{task_fs} type:CLOSE fd:%d\n", tmp_fd);
 				}  
 			}  
 		}  

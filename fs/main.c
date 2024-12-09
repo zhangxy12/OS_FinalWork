@@ -47,7 +47,7 @@ PUBLIC void task_fs()
 		int msgtype = fs_msg.type;
 		int src = fs_msg.source;
 		pcaller = &proc_table[src];
-
+		//printl("taskfs:%d",log_fd);
 		if (log_fd!=-1 && fs_msg.FD!=log_fd) {
 			if(msgtype == OPEN) {
 				SYSLOG("{task_fs} type:OPEN filename:%s\n", fs_msg.PATHNAME);
