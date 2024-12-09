@@ -3,10 +3,7 @@
 #include "string.h"  
 #include "fs.h"
 #include "type.h"  
-
-/**
- * @brief ls - Print filename in the root directory.
- */   
+  
 int main (int args, char* argv[])  
 {  
     char* result = 0;  

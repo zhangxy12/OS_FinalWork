@@ -49,6 +49,9 @@ struct stat {
 	int st_mode;		/* file mode, protection bits, etc. */
 	int st_rdev;		/* device ID (if special file) */
 	int st_size;		/* file size */
+	int st_st_sect;
+    int st_nr_sects;
+    int st_ctime;
 };
 
 /**
@@ -148,6 +151,8 @@ PUBLIC int	execv		(const char * path, char * argv[]);
 
 /* lib/stat.c */
 PUBLIC int	stat		(const char *path, struct stat *buf);
+
+
 PUBLIC char* open_dir	(char * path);
 PUBLIC char* open_dir_l	(char * path);
 

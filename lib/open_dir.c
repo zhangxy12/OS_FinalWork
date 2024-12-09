@@ -10,8 +10,7 @@
 #include "global.h"  
 #include "keyboard.h"  
 #include "proto.h"  
-
-// for ls  
+  
 PUBLIC char* open_dir(char* path) {
     static char buf[400];  // 使用静态缓冲区
     MESSAGE msg;

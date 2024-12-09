@@ -70,6 +70,9 @@ PUBLIC int do_stat()
 	s.st_mode= pin->i_mode;
 	s.st_rdev= is_special(pin->i_mode) ? pin->i_start_sect : NO_DEV;
 	s.st_size= pin->i_size;
+    s.st_st_sect= pin->i_start_sect;
+    s.st_nr_sects= pin->i_nr_sects;
+   
 
 	put_inode(pin);
 
@@ -190,24 +193,6 @@ PUBLIC int strip_path(char * filename, const char * pathname,
 
 	return 0;
 }
-
-/*****************************************************************************
- *                                do_open_dir
- *****************************************************************************/
-/**
- * Open a directory, read its contents, and store the file names.
- *
- * This function searches for the directory specified by the `dir` path, reads
- * its entries, and copies the names of the files in the directory into the 
- * `dir` buffer. The directory's inode is located, and the directory is read
- * sector by sector.
- *
- * @param[in]  dir The buffer that will hold the names of the directory files.
- * @return     0 if the directory is successfully opened and processed, 
- *             otherwise 0 (indicating failure).
- *
- * ls
- *****************************************************************************/
 PUBLIC int do_open_dir() {
     struct inode* dir_inode;
     char filename[MAX_PATH];
@@ -220,6 +205,9 @@ PUBLIC int do_open_dir() {
         return 0;
     }
 
+    // printl("dir:%s\n", dir);
+    // printl("buf:%s\n", fs_msg.pBUF);
+    // printl("dir_node:%d\n", dir_inode);
 
     int dir_blk0_nr = dir_inode->i_start_sect;
     int nr_dir_blks = (dir_inode->i_size + SECTOR_SIZE - 1) / SECTOR_SIZE;
@@ -246,175 +234,4 @@ PUBLIC int do_open_dir() {
     return (void*)0;
 }
 
-/*****************************************************************************
- *                                do_open_dir_l
- *****************************************************************************/
-/**
- * Open a directory, read its entries, and store detailed file information 
- * (such as name, inode properties, permissions, size, and more) into a 
- * buffer for later use.
- *
- * This function searches for the directory specified by the path, reads its 
- * entries, and for each file in the directory, retrieves and formats detailed 
- * inode information, including the file's name, permissions, size, sector 
- * information, and more. It stores the processed data into a static buffer 
- * and then copies the result into `fs_msg.lBUF`.
- *
- * @param[in] dir The buffer that will hold the formatted directory and file 
- *                information.
- * 
- * @return     0 if the directory is successfully processed and the information 
- *             is stored, otherwise 0 (indicating failure).
- * 
- *ls_l
- *****************************************************************************/
-PUBLIC int do_open_dir_l() {
-    struct inode* dir_inode;
-    char filename[MAX_PATH_L];
-    char dir_static[MAX_PATH_L];  // 静态缓冲区，存储目录信息
-    char* dir = fs_msg.lBUF;      // 目标缓冲区，复制内容到 fs_msg.lBUF
-    int pointer = 0;
-    char temp[128];  // 临时存储转换后的文件属性
 
-    printl("Opening directory: %s\n", dir);
-    memset(filename, 0, MAX_FILENAME_LEN);
-
-    // 获取目录的 inode 信息
-    if (strip_path(filename, dir, &dir_inode) != 0) {
-        printl("Failed to get inode from path\n");
-        return 0;
-    }
-
-    // 获取目录块号信息
-    int dir_blk0_nr = dir_inode->i_start_sect;
-    int nr_dir_blks = (dir_inode->i_size + SECTOR_SIZE - 1) / SECTOR_SIZE;
-    struct dir_entry* pde;
-	int nr_dir_entries =
-        dir_inode->i_size / DIR_ENTRY_SIZE; /**
-                                             * including unused slots
-                                             * (the file has been deleted
-                                             * but the slot is still there)
-                                             */
-    int i, j;
-
-    // 清空静态缓冲区
-    memset(dir_static, 0, sizeof(dir_static));
-    int static_pointer = 0;  // 用于跟踪静态缓冲区的位置
-
-    // 遍历目录块
-    for (i = 0; i < nr_dir_blks; i++) {
-        RD_SECT(dir_inode->i_dev, dir_blk0_nr + i);
-        pde = (struct dir_entry*)fsbuf;
-
-        // 遍历目录中的所有条目
-        for (j = 0; j < SECTOR_SIZE / DIR_ENTRY_SIZE; j++, pde++) {
-            // 跳过空目录项
-            if (pde->name[0] == '\0') {
-                continue;
-            }
-
-            // 打印文件名
-            if (static_pointer >= sizeof(dir_static) - 1) {
-                printl("Buffer overflow detected.\n");
-                return 0;
-            }
-            dir_static[static_pointer++] = ' ';  // 文件名之前的空格
-            memcpy(dir_static + static_pointer, pde->name, strlen(pde->name));
-            static_pointer += strlen(pde->name);
-
-            // 获取文件 inode 信息
-            struct inode* file_inode = get_inode(dir_inode->i_dev, pde->inode_nr);
-            if (!file_inode) {
-                printl("Error retrieving inode for file: %s\n", pde->name);
-                continue;
-            }
-			memset(temp, 0, sizeof(temp));
-            // 获取文件的权限模式（i_mode）
-            itoa(temp, file_inode->i_mode);  // 转换为十六进制字符串
-            if (static_pointer + strlen(temp) + 1 >= sizeof(dir_static)) {
-                printl("Buffer overflow detected.\n");
-                return 0;
-            }
-            dir_static[static_pointer++] = ' ';
-            memcpy(dir_static + static_pointer, temp, strlen(temp));  // 文件权限模式（十六进制）
-            static_pointer += strlen(temp);
-
-			memset(temp, 0, sizeof(temp));
-            // 获取文件的大小（i_size）并转换为十六进制格式
-            itoa(temp, file_inode->i_size);  // 转换为十六进制字符串
-            if (static_pointer + strlen(temp) + 1 >= sizeof(dir_static)) {
-                printl("Buffer overflow detected.\n");
-                return 0;
-            }
-            dir_static[static_pointer++] = ' ';
-            memcpy(dir_static + static_pointer, temp, strlen(temp));  // 文件大小（十六进制）
-            static_pointer += strlen(temp);
-
-            // 获取文件的起始扇区（i_start_sect）并转换为十六进制格式
-			memset(temp, 0, sizeof(temp));
-            itoa(temp, file_inode->i_start_sect);
-            if (static_pointer + strlen(temp) + 1 >= sizeof(dir_static)) {
-                printl("Buffer overflow detected.\n");
-                return 0;
-            }
-            dir_static[static_pointer++] = ' ';
-            memcpy(dir_static + static_pointer, temp, strlen(temp));  // 文件起始扇区（十六进制）
-            static_pointer += strlen(temp);
-
-            // 获取文件的占用扇区数（i_nr_sects）并转换为十六进制格式
-			memset(temp, 0, sizeof(temp));
-            itoa(temp, file_inode->i_nr_sects);
-            if (static_pointer + strlen(temp) + 1 >= sizeof(dir_static)) {
-                printl("Buffer overflow detected.\n");
-                return 0;
-            }
-            dir_static[static_pointer++] = ' ';
-            memcpy(dir_static + static_pointer, temp, strlen(temp));  // 文件占用扇区数（十六进制）
-            static_pointer += strlen(temp);
-
-            // 获取文件设备编号（i_dev）
-			memset(temp, 0, sizeof(temp));
-            itoa(temp, file_inode->i_dev);
-            if (static_pointer + strlen(temp) + 1 >= sizeof(dir_static)) {
-                printl("Buffer overflow detected.\n");
-                return 0;
-            }
-            dir_static[static_pointer++] = ' ';
-            memcpy(dir_static + static_pointer, temp, strlen(temp));  // 文件设备编号（十六进制）
-            static_pointer += strlen(temp);
-
-            // 获取文件引用计数（i_cnt）
-			memset(temp, 0, sizeof(temp));
-            itoa(temp, file_inode->i_cnt);
-            if (static_pointer + strlen(temp) + 1 >= sizeof(dir_static)) {
-                printl("Buffer overflow detected.\n");
-                return 0;
-            }
-            dir_static[static_pointer++] = ' ';
-            memcpy(dir_static + static_pointer, temp, strlen(temp));  // 文件引用计数（十六进制）
-            static_pointer += strlen(temp);
-
-            // 获取文件 inode 编号（i_num）
-			memset(temp, 0, sizeof(temp));
-            itoa(temp, file_inode->i_num);
-            if (static_pointer + strlen(temp) + 1 >= sizeof(dir_static)) {
-                printl("Buffer overflow detected.\n");
-                return 0;
-            }
-            dir_static[static_pointer++] = ' ';
-            memcpy(dir_static + static_pointer, temp, strlen(temp));  // 文件 inode 编号（十六进制）
-            static_pointer += strlen(temp);
-
-            // 换行符分隔每个文件
-            dir_static[static_pointer++] = '\n';
-        }
-    }
-
-    // 确保静态缓冲区末尾的字符串终止符
-    dir_static[static_pointer] = '\0';
-
-    // 最后将静态缓冲区的内容复制到 fs_msg.lBUF 中
-    memcpy(fs_msg.lBUF, dir_static, static_pointer + 1);
-
-    return (void*)0;
-}

@@ -97,10 +97,11 @@ PUBLIC void task_fs()
 			fs_msg.RETVAL = do_stat();
 			break;
 		case OPEN_DIR:
+			// printf("fs_msg.pBug in main address is %d\n", fs_msg.pBUF);
+        	// printf("BUF in main: %s\n", fs_msg.pBUF);
 			fs_msg.BUF = do_open_dir();
 			break;
-		case OPEN_DIR_L:
-			fs_msg.BUF = do_open_dir_l();
+		
 			break;
 		default:
 			dump_msg("FS::unknown message:", &fs_msg);

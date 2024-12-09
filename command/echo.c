@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
             write(fd, " ", 1);  // 在单词之间添加空格  
         }  
     }  
-    write(fd, "\n", 1);  // 添加换行符  
+    //write(fd, "\n", 1);  // 添加换行符  
   
     // 关闭文件  
     close(fd);  

@@ -197,9 +197,6 @@ lib/lseek.o: lib/lseek.c
 lib/open_dir.o: lib/open_dir.c
 	$(CC) $(CFLAGS) -o $@ $<
 
-lib/open_dir_l.o: lib/open_dir_l.c
-	$(CC) $(CFLAGS) -o $@ $<
-
 mm/main.o: mm/main.c
 	$(CC) $(CFLAGS) -o $@ $<
 
