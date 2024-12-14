@@ -31,6 +31,10 @@
    - 删除指定文件
 
      指令：rm  <file_name>
+     
+   - 查找指定文件里的指定内容
+
+     指令：grep  < text>  <file_name>
 
 3. 支持在同一个TTY上，可并发运行多个shell任务
 
